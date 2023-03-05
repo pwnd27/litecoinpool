@@ -8,14 +8,17 @@ async def main():
     chat_id = -469403074
     while True:
         text = 'Не работают:\n\n'
+        send = False
         workers = next(get_info())
         for name, param in workers.items():
             if param[0] == 0:
+                send = True
                 text = text + name + '\n'
 
-        bot = telegram.Bot("2146793930:AAGZfmhgBvJMbni2kuCA6QAh1eeFXkAEAS4")
-        async with bot:
-            await bot.send_message(chat_id, text)
+        if send:
+            bot = telegram.Bot("2146793930:AAGZfmhgBvJMbni2kuCA6QAh1eeFXkAEAS4")
+            async with bot:
+                await bot.send_message(chat_id, text)
 
         time.sleep(600)
 
