@@ -1,0 +1,23 @@
+import asyncio
+import telegram
+import time
+from workers import get_info
+
+
+async def main():
+    chat_id = -469403074
+    while True:
+        text = 'Не работают:\n\n'
+        workers = next(get_info())
+        for name, param in workers.items():
+            if param[0] == 0:
+                text = text + name + '\n'
+
+        bot = telegram.Bot("2146793930:AAGZfmhgBvJMbni2kuCA6QAh1eeFXkAEAS4")
+        async with bot:
+            await bot.send_message(chat_id, text)
+
+        time.sleep(600)
+
+if __name__ == '__main__':
+    asyncio.run(main())
