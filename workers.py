@@ -1,3 +1,4 @@
+import time
 import requests
 import re
 from datetime import datetime
@@ -5,11 +6,18 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from models import *
 
-def get_workers_from_url(url):
 
-    reg = r'\w{6}.\d{3}\w\d{2}'
+def get_data_from_url(url):
     response = requests.get(url)
     data = response.json()
+    return data
+
+
+def get_workers_info(url):
+
+    reg = r'\w{6}.\d{3}\w\d{2}'
+    data = get_data_from_url(url)
+
     worker_info = {}
     current_time = datetime.utcnow()
 
@@ -55,6 +63,39 @@ def add_info_in_db(engine, workers, worker_info):
         session.commit()
 
 
+def check_workers(url):
+
+    reg = r'\w{6}.\d{3}\w\d{2}'
+    data = get_data_from_url(url)
+
+    active_workers = []
+
+    for worker in data.get('workers'):
+        match = re.fullmatch(reg, worker)
+        if match:
+            hash_rate = data['workers'][worker]['hash_rate']
+            if hash_rate != 0:
+                active_workers.append(worker)
+
+
+    print(f'> active workers: {active_workers}')
+    return active_workers
+
+
+def compare_workers(previous_workers, current_workers):
+    
+    fallen_workers = []
+    if previous_workers == current_workers:
+        return fallen_workers
+    
+    for worker in previous_workers:
+        if worker not in current_workers:
+            fallen_workers.append(worker)
+    
+    return fallen_workers
+
+
+
 
 def get_info():
     
@@ -63,8 +104,24 @@ def get_info():
     
     workers = get_workers_in_db(engine)
 
-    worker_info = get_workers_from_url(url)
+    worker_info = get_workers_info(url)
 
     # add_info_in_db(engine, workers, worker_info)
     
-    yield worker_info
+    return worker_info
+
+
+
+def get_fallen_workers():
+    current_active_workers = []
+    while True:
+        if current_active_workers == []:
+            current_active_workers = check_workers('https://www.litecoinpool.org/api?api_key=509bcec844b156d6b806953ce89e6c27')
+            time.sleep(10)
+            continue
+        else:
+            previous_active_workers = current_active_workers
+            current_active_workers = check_workers('https://www.litecoinpool.org/api?api_key=509bcec844b156d6b806953ce89e6c27')
+            fallen_workers = compare_workers(previous_active_workers, current_active_workers)
+            print(f'> fallen workers: {fallen_workers}')
+            time.sleep(10)
