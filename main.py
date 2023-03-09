@@ -11,7 +11,8 @@ from workers import (
     get_data_from_url, 
     engine, 
     get_workers_info, 
-    get_workers_in_db)
+    get_workers_in_db
+    )
 
 
 async def send_msg(text):
@@ -106,7 +107,9 @@ async def send_daily_summary():
 async def main():
     task1 = asyncio.create_task(send_current_info())
     task2 = asyncio.create_task(send_fallen_workers())
-    await asyncio.gather(task1, task2)
+    task3 = asyncio.create_task(send_daily_summary())
+    task4 = asyncio.create_task(add_worker_info_in_db(engine))
+    await asyncio.gather(task1, task2, task3, task4)
 
 
 if __name__ == '__main__':
