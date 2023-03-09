@@ -3,7 +3,7 @@ import telegram
 import time
 import re
 from models import *
-from config import url, TOKEN, reg
+from config import url, TOKEN, reg, chat_id
 from workers import (
     get_daily_summary, 
     check_workers, 
@@ -16,10 +16,10 @@ from workers import (
 
 
 async def send_msg(text):
-    my_chat_id = 1098949498
+    chat_id = chat_id
     bot = telegram.Bot(TOKEN)
     async with bot:
-        await bot.send_message(my_chat_id, text)
+        await bot.send_message(chat_id, text)
 
 
 def create_msg_from_list(list_workers, text):
