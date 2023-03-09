@@ -1,6 +1,5 @@
 import asyncio
 import telegram
-import time
 import re
 from models import *
 from config import url, TOKEN, reg, chat_id
@@ -70,27 +69,25 @@ async def send_current_info():
         if inactive_workers == []:
             text = 'Все асики работают!'
         else:
-            text = create_msg_from_list(list_workers=inactive_workers, text='Не работают:\n')
+            text = create_msg_from_list(list_workers=inactive_workers, text='Не работают:\n\n')
         
         await send_msg(text)
         await asyncio.sleep(3600)
-
+    
 
 async def send_fallen_workers():
     current_active_workers = []
     while True:
         if current_active_workers == []:
-            print('Enter without workers')
             current_active_workers = check_workers(url)
             await asyncio.sleep(10)
             continue
         else:
-            print('Enter with workers')
             previous_active_workers = current_active_workers
             current_active_workers = check_workers(url)
             fallen_workers = compare_workers(previous_active_workers, current_active_workers)
             
-            text = create_msg_from_list(list_workers=fallen_workers, text='Упали:\n')
+            text = create_msg_from_list(list_workers=fallen_workers, text='Упали:\n\n')
             await send_msg(text)
             await asyncio.sleep(10)
 
@@ -101,14 +98,19 @@ async def send_daily_summary():
         text = get_daily_summary()
         await send_msg(text)
         await asyncio.sleep(86400)
-
+    
 
 async def main():
-    task1 = asyncio.create_task(send_current_info())
-    task2 = asyncio.create_task(send_fallen_workers())
-    task3 = asyncio.create_task(send_daily_summary())
-    task4 = asyncio.create_task(add_worker_info_in_db(engine))
-    await asyncio.gather(task1, task2, task3, task4)
+
+    coros = [
+        send_current_info(), 
+        send_fallen_workers(), 
+        send_daily_summary(), 
+        add_worker_info_in_db(engine),
+        ]
+
+    tasks = [asyncio.create_task(coro) for coro in coros]
+    await asyncio.gather(*tasks)
 
 
 if __name__ == '__main__':

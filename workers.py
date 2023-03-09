@@ -1,11 +1,10 @@
-import time
 import requests
 import re
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from models import *
-from config import url, reg, eng
+from config import url, reg
 
 
 engine = create_engine('sqlite:///litecoin.db', echo=True)
