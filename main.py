@@ -16,7 +16,6 @@ from workers import (
 
 
 async def send_msg(text):
-    chat_id = chat_id
     bot = telegram.Bot(TOKEN)
     async with bot:
         await bot.send_message(chat_id, text)
