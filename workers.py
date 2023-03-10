@@ -79,22 +79,22 @@ def get_daily_summary():
     ltc_rub = data['market']['ltc_rub']
     past_24h_reward_in_rub = round(past_24h_rewards * ltc_rub, 2)
 
-    yestoday = datetime.now().date() - timedelta(days=1)
+    yesteday = datetime.now().date() - timedelta(days=1)
 
     connection = engine.connect()
     session = Session(connection)
-    stmt = select(WorkerInfo).where(WorkerInfo.time.contains(yestoday))
+    stmt = select(WorkerInfo).where(WorkerInfo.time.contains(yesteday))
     workers = session.scalars(stmt).all()
     total_hash_rate = 0
-    workers_count = 0
+    counter = 0
     for worker in workers:
         total_hash_rate += worker.hash_rate
-        workers_count += 1
+        counter += 1
     
     session.close()
-    average_hash_rate = total_hash_rate / workers_count
+    average_hash_rate = total_hash_rate / counter
 
-    date = f'Сводка за {yestoday}:\n'
+    date = f'Сводка за {yesteday}:\n'
     average_speed = f'Средний хешрейт асиков: {round(average_hash_rate, 2)}\n'
     rubles = f'Заработано: {past_24h_reward_in_rub} рублей\n'
     text = date + average_speed + rubles

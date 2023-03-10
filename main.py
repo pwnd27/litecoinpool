@@ -1,6 +1,7 @@
 import asyncio
 import telegram
 import re
+from sqlalchemy.orm import Session
 from models import *
 from config import url, TOKEN, reg, chat_id
 from workers import (
@@ -87,8 +88,9 @@ async def send_fallen_workers():
             current_active_workers = check_workers(url)
             fallen_workers = compare_workers(previous_active_workers, current_active_workers)
             
-            text = create_msg_from_list(list_workers=fallen_workers, text='Упали:\n\n')
-            await send_msg(text)
+            if fallen_workers != []:
+                text = create_msg_from_list(list_workers=fallen_workers, text='Упали:\n\n')
+                await send_msg(text)
             await asyncio.sleep(10)
 
 
