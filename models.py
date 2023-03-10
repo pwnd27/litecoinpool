@@ -12,7 +12,6 @@ class Worker(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(30))
 
-
 class WorkerInfo(Base):
     __tablename__ = 'worker_info'
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -20,4 +19,4 @@ class WorkerInfo(Base):
     hash_rate: Mapped[int]
     connected: Mapped[bool]
     time: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    worker: Mapped['Worker'] = relationship()
+    worker: Mapped['Worker'] = relationship(lazy='joined')

@@ -1,15 +1,24 @@
 import requests
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from models import *
+from config import url, reg
 
-def get_workers_from_url(url):
 
-    reg = r'\w{6}.\d{3}\w\d{2}'
+engine = create_engine('sqlite:///litecoin.db', echo=True)
+
+def get_data_from_url(url):
     response = requests.get(url)
     data = response.json()
+    return data
+
+
+def get_workers_info(url):
+
+    data = get_data_from_url(url)
+
     worker_info = {}
     current_time = datetime.utcnow()
 
@@ -33,38 +42,61 @@ def get_workers_in_db(engine):
     return workers
 
 
-def add_info_in_db(engine, workers, worker_info):
+def check_workers(url):
+
+    data = get_data_from_url(url)
+
+    active_workers = []
+
+    for worker in data.get('workers'):
+        match = re.fullmatch(reg, worker)
+        if match:
+            hash_rate = data['workers'][worker]['hash_rate']
+            if hash_rate != 0:
+                active_workers.append(worker)
+
+
+    return active_workers
+
+
+def compare_workers(previous_workers, current_workers):
     
-    to_add = []
+    fallen_workers = []
+    if previous_workers == current_workers:
+        return fallen_workers
     
-    for worker, info in worker_info.items():
-        for worker_in_db in workers:
-            if worker == worker_in_db.name:
-                worker_id = worker_in_db.id
-        obj = WorkerInfo(
-            worker_id=worker_id,
-            hash_rate=info[0],
-            connected=info[1],
-            time=info[2],
-        )
-        to_add.append(obj)
-
-
-    with Session(engine) as session:
-        session.add_all(to_add)
-        session.commit()
-
-
-
-def get_info():
+    for worker in previous_workers:
+        if worker not in current_workers:
+            fallen_workers.append(worker)
     
-    url = 'https://www.litecoinpool.org/api?api_key=509bcec844b156d6b806953ce89e6c27'
-    engine = create_engine('sqlite:///litecoin.db', echo=True)
-    
-    workers = get_workers_in_db(engine)
+    return fallen_workers
 
-    worker_info = get_workers_from_url(url)
 
-    # add_info_in_db(engine, workers, worker_info)
+def get_daily_summary():
+    data = get_data_from_url(url)
+
+    past_24h_rewards = data['user']['past_24h_rewards']
+    ltc_rub = data['market']['ltc_rub']
+    past_24h_reward_in_rub = round(past_24h_rewards * ltc_rub, 2)
+
+    yesteday = datetime.now().date() - timedelta(days=1)
+
+    connection = engine.connect()
+    session = Session(connection)
+    stmt = select(WorkerInfo).where(WorkerInfo.time.contains(yesteday))
+    workers = session.scalars(stmt).all()
+    total_hash_rate = 0
+    counter = 0
+    for worker in workers:
+        total_hash_rate += worker.hash_rate
+        counter += 1
     
-    yield worker_info
+    session.close()
+    average_hash_rate = total_hash_rate / counter
+
+    date = f'Сводка за {yesteday}:\n'
+    average_speed = f'Средний хешрейт асиков: {round(average_hash_rate, 2)}\n'
+    rubles = f'Заработано: {past_24h_reward_in_rub} рублей\n'
+    text = date + average_speed + rubles
+
+    return text
